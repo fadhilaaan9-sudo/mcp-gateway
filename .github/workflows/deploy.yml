@@ -1,0 +1,40 @@
+name: Deploy to Portainer
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Login ke GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build dan push gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/hahahihi-berdikari/mcp-gateway:latest
+
+      - name: Build dan push bot
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: bot
+          push: true
+          tags: ghcr.io/hahahihi-berdikari/mcp-gateway-bot:latest
+
+      - name: Panggil webhook Portainer
+        run: curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
