@@ -1,0 +1,49 @@
+# Compose untuk VPS (production).
+# Isinya 3 service: mongo + gateway + bot.
+# Jalankan di VPS: docker compose -f docker-compose.prod.yml up -d
+# Token-token dibaca dari file .env di folder yang sama,
+# jadi jangan tulis token langsung di file ini.
+
+services:
+  mongo:
+    image: mongo:8
+    container_name: gateway-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: gateway
+      MONGO_INITDB_ROOT_PASSWORD: gateway123
+      MONGO_INITDB_DATABASE: gateway
+    volumes:
+      - mongo_data:/data/db
+
+  gateway:
+    image: ghcr.io/farhanfadhila/mcp-gateway:latest
+    container_name: gateway
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "127.0.0.1:8087:8080"
+    environment:
+      # Host-nya "mongo" (nama service), bukan localhost.
+      # Di dalam Docker, localhost artinya container itu sendiri.
+      MONGODB_URI: mongodb://gateway:gateway123@mongo:27017/gateway?authSource=admin
+      MONGODB_DB: gateway
+      PORT: "8080"
+      GATEWAY_TOKEN_MUSE_1: ${GATEWAY_TOKEN_MUSE_1}
+      GATEWAY_TOKEN_MUSE_2: ${GATEWAY_TOKEN_MUSE_2}
+      GATEWAY_TOKEN_BOT: ${GATEWAY_TOKEN_BOT}
+
+  bot:
+    image: ghcr.io/farhanfadhila/mcp-gateway-bot:latest
+    container_name: gateway-bot
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_TOKEN_BOT: ${GATEWAY_TOKEN_BOT}
+
+volumes:
+  mongo_data:

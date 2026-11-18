@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:8
+    container_name: gateway-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: gateway
+      MONGO_INITDB_ROOT_PASSWORD: gateway123
+      MONGO_INITDB_DATABASE: gateway
+    volumes:
+      - mongo_data:/data/db
+
+  # UI web untuk melihat isi MongoDB lewat browser.
+  # Buka http://localhost:8081, login dengan username dan
+  # password di bawah ini, lalu klik database gateway > messages.
+  mongo-express:
+    image: mongo-express:1
+    container_name: gateway-mongo-express
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://gateway:gateway123@mongo:27017/?authSource=admin
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+
+volumes:
+  mongo_data:
